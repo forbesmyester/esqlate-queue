@@ -21,7 +21,7 @@ If these are your requirements and you're using TypeScript, you may want a typed
 
 ## What it does
 
-This allows you to use one simple worker function (`EsqlateQueueWorker`) which takes an item on the queue, and transforms it into the item you want as the finished product and the end of the queue.
+This allows you to use one simple worker function (`EsqlateQueueWorker<Q, R> = (item: Q) => Promise<R>`) which has a parameter of a queue item, and transforms it into the item you want as the finished product and the end of the queue.
 
 Passing this `EsqlateQueueWorker` to the `getEsqlateQueue()` function will return an object with two methods, these are:
 
