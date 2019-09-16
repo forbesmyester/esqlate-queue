@@ -35,7 +35,6 @@ setTimeout(
 let n = 1;
 
 // Process the Queue Results (which also start the queue processing)
-// NOTE: If not for the resolve(), this will never actually end.
 for await (const s of esqlateQueue.results()) {
     assert(s == "Number: A" + (n++));
 }
