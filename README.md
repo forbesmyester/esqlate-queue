@@ -1,9 +1,36 @@
 # EsqlateQueue - Push to a AsyncIterableIterator
 
-Simple TypeScript based Queue for work to be processed using a user supplied worker.
+## Why
 
-Currently it does not support any form of parallelism, but is well typed and has
-zero dependencies.
+Sometimes you want to process something, but you're not interested in the result immediately because the task is not a priority to you, or maybe even the user.
+
+For this you may well use a Queue of some variety, something like [RabbitMQ](https://www.rabbitmq.com/), [Amazon AWS's SQS](https://aws.amazon.com/sqs/) or maybe even [ZeroMQ](https://zeromq.org/).
+
+These are all fantastic technologies but:
+
+ * The first two require infrastructure (so perhaps not great for an OSS project you want people to use).
+ * The latter, you just get a message out, which is untyped and is perhaps overly complicated / higher barrier to entry for some use cases.
+
+However if your task is mainly just running a few [PostgreSQL](https://www.postgresql.org/) queries:
+
+ * Your CPU requirements for the process are probably small (you're doing mostly IO) and PostgreSQL is taking the load.
+ * You can't simply scale to many nodes without complications such as [pgBouncer](https://pgbouncer.github.io/) or similar because of how PostgreSQL handles connections (memory).
+ * You want to keep it super simple as you know the demand for the service will be small.
+ 
+If these are your requirements and you're using TypeScript, you may want a typed solution for a really simple Queue this may be the answer.
+
+## What it does
+
+This allows you to use one simple worker function (`EsqlateQueueWorker`) which takes an item on the queue, and transforms it into the item you want as the finished product and the end of the queue.
+
+Passing this `EsqlateQueueWorker` to the `getEsqlateQueue()` function will return an object with two methods, these are:
+
+ * `push()` which you use to add things for processing.
+ * `results()`, which will when called, return an `AsyncIterableIterator` which you can use a `for-of` to get the results.
+
+Currently it does not support any form of parallelism, but is well typed and has zero dependencies.
+
+## Example
 
 ```typescript
 import { EsqlateQueueWorker } from '../src/index';
