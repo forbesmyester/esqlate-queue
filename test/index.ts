@@ -101,3 +101,46 @@ test("promise rejection", (assert) => {
     });
 
 });
+
+test("parallelism", (assert) => {
+
+    assert.plan(1);
+
+    const queueWorker: EsqlateQueueWorker<number, string> = (n) => {
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                resolve("Number " + n);
+            }, 100 * (6 - n));
+        });
+    };
+
+    let i = 0;
+
+    const expected = [
+        "Number 5",
+        "Number 4",
+        "Number 3",
+        "Number 2",
+        "Number 1",
+    ];
+
+    const result: string[] = [];
+
+    const esqlateQueue = getEsqlateQueue(queueWorker, 5);
+    esqlateQueue.push(++i);
+    esqlateQueue.push(++i);
+    esqlateQueue.push(++i);
+    esqlateQueue.push(++i);
+    esqlateQueue.push(++i);
+
+    return new Promise(async (resolve) => {
+    for await (const s of esqlateQueue.results()) {
+        result.push(s);
+        if (result.length === 5) {
+            assert.deepEqual(result, expected);
+            resolve();
+        }
+    }
+    });
+
+});

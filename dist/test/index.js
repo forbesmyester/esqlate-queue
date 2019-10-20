@@ -196,3 +196,69 @@ ava_1.default("promise rejection", function (assert) {
         });
     }); });
 });
+ava_1.default("parallelism", function (assert) {
+    assert.plan(1);
+    var queueWorker = function (n) {
+        return new Promise(function (resolve) {
+            setTimeout(function () {
+                resolve("Number " + n);
+            }, 100 * (6 - n));
+        });
+    };
+    var i = 0;
+    var expected = [
+        "Number 5",
+        "Number 4",
+        "Number 3",
+        "Number 2",
+        "Number 1",
+    ];
+    var result = [];
+    var esqlateQueue = index_1.default(queueWorker, 5);
+    esqlateQueue.push(++i);
+    esqlateQueue.push(++i);
+    esqlateQueue.push(++i);
+    esqlateQueue.push(++i);
+    esqlateQueue.push(++i);
+    return new Promise(function (resolve) { return __awaiter(void 0, void 0, void 0, function () {
+        var _a, _b, s, e_4_1;
+        var e_4, _c;
+        return __generator(this, function (_d) {
+            switch (_d.label) {
+                case 0:
+                    _d.trys.push([0, 5, 6, 11]);
+                    _a = __asyncValues(esqlateQueue.results());
+                    _d.label = 1;
+                case 1: return [4 /*yield*/, _a.next()];
+                case 2:
+                    if (!(_b = _d.sent(), !_b.done)) return [3 /*break*/, 4];
+                    s = _b.value;
+                    result.push(s);
+                    if (result.length === 5) {
+                        assert.deepEqual(result, expected);
+                        resolve();
+                    }
+                    _d.label = 3;
+                case 3: return [3 /*break*/, 1];
+                case 4: return [3 /*break*/, 11];
+                case 5:
+                    e_4_1 = _d.sent();
+                    e_4 = { error: e_4_1 };
+                    return [3 /*break*/, 11];
+                case 6:
+                    _d.trys.push([6, , 9, 10]);
+                    if (!(_b && !_b.done && (_c = _a.return))) return [3 /*break*/, 8];
+                    return [4 /*yield*/, _c.call(_a)];
+                case 7:
+                    _d.sent();
+                    _d.label = 8;
+                case 8: return [3 /*break*/, 10];
+                case 9:
+                    if (e_4) throw e_4.error;
+                    return [7 /*endfinally*/];
+                case 10: return [7 /*endfinally*/];
+                case 11: return [2 /*return*/];
+            }
+        });
+    }); });
+});

@@ -17,7 +17,7 @@ However if your task is mainly just running a few [PostgreSQL](https://www.postg
  * You can't simply scale to many nodes without complications such as [pgBouncer](https://pgbouncer.github.io/) or similar because of how PostgreSQL handles connections (memory).
  * You want to keep it super simple as you know the demand for the service will be small.
  
-If these are your requirements and you're using TypeScript, you may want a typed solution for a really simple Queue this may be the answer.
+If these are your requirements and you're using TypeScript, you may want a typed solution for a really simple queue this may be the answer.
 
 ## What it does
 
@@ -28,17 +28,17 @@ Passing this `EsqlateQueueWorker` to the `getEsqlateQueue()` function will retur
  * `push()` which you use to add things for processing.
  * `results()`, which will when called, return an `AsyncIterableIterator` which you can use a `for-of` to get the results.
 
-Currently it does not support any form of parallelism, but is well typed and has zero dependencies.
+UPDATE: This now performs `n` jobs in parallel by wrapping the excellent the excellent [async](https://caolan.github.io/async/v3/) library!
 
 ## Example
 
 ```typescript
-import { EsqlateQueueWorker } from '../src/index';
-import getEsqlateQueue from '../src/index';
+import { EsqlateQueueWorker as QueueWorker } from '../src/index';
+import getQueue from '../src/index';
 
 
 // Create a worker. This will be used to process the items in the Queue.
-const queueWorker: EsqlateQueueWorker<number,string> = (n) => {
+const worker: QueueWorker<number,string> = (n) => {
     return new Promise((resolve) => {
         setTimeout(() => {
             resolve("Number: A" + n);
@@ -47,7 +47,7 @@ const queueWorker: EsqlateQueueWorker<number,string> = (n) => {
 };
 
 // Create an instance of the Queue
-const esqlateQueue = getEsqlateQueue(queueWorker);
+const esqlateQueue = getQueue(worker, 2); // UPDATE: Can do two things at once!
 
 // Push items onto the Queue... afterwards, otherwise we'd never get to the loop
 setTimeout(
@@ -73,6 +73,11 @@ for await (const s of esqlateQueue.results()) {
 To install, use NPM:
 
     npm install esqlate-queue
+
+## Versions
+
+ * 1.0.0 - Initial Release
+ * 2.0.0 - Supports parallelism
 
 ## License
 

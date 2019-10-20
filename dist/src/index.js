@@ -38,44 +38,100 @@ var __asyncGenerator = (this && this.__asyncGenerator) || function (thisArg, _ar
     function reject(value) { resume("throw", value); }
     function settle(f, v) { if (f(v), q.shift(), q.length) resume(q[0][0], q[0][1]); }
 };
+var __values = (this && this.__values) || function(o) {
+    var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
+    if (m) return m.call(o);
+    if (o && typeof o.length === "number") return {
+        next: function () {
+            if (o && i >= o.length) o = void 0;
+            return { value: o && o[i++], done: !o };
+        }
+    };
+    throw new TypeError(s ? "Object is not iterable." : "Symbol.iterator is not defined.");
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 var assert = require("assert");
-function getEsqlateQueue(runner) {
-    var q = [];
+var async_1 = require("async");
+function getEsqlateQueue(runner, parallelism) {
+    if (parallelism === void 0) { parallelism = 1; }
+    var complete = new Set();
+    var errors = [];
+    function worker(task, cb) {
+        var t = new Date().getTime();
+        runner(task)
+            .then(function (r) {
+            complete.add({ r: r, t: t });
+            if (emptyQueueBlocker) {
+                emptyQueueBlocker(null);
+            }
+            cb();
+        })
+            .catch(function (e) {
+            errors.push(e);
+            if (emptyQueueBlocker) {
+                emptyQueueBlocker(null);
+            }
+        });
+    }
+    var aq = async_1.queue(worker, parallelism);
     var runningCount = 0;
-    var resolver;
+    var emptyQueueBlocker;
     function results() {
         return __asyncGenerator(this, arguments, function results_1() {
-            return __generator(this, function (_a) {
-                switch (_a.label) {
+            var complete_1, complete_1_1, c, e_1_1;
+            var e_1, _a;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
                     case 0:
                         assert(runningCount++ === 0, "QueryRunner.calledCount can only be called once");
-                        _a.label = 1;
+                        _b.label = 1;
                     case 1:
-                        if (!true) return [3 /*break*/, 7];
-                        if (!(q.length === 0)) return [3 /*break*/, 3];
+                        if (!true) return [3 /*break*/, 12];
+                        while (errors.length) {
+                            throw errors.shift();
+                        }
+                        if (!(complete.size === 0)) return [3 /*break*/, 3];
                         return [4 /*yield*/, __await(new Promise(function (resolve) {
-                                resolver = resolve;
+                                emptyQueueBlocker = resolve;
                             }))];
                     case 2:
-                        _a.sent();
-                        _a.label = 3;
-                    case 3: return [4 /*yield*/, __await(runner(q.shift()))];
-                    case 4: return [4 /*yield*/, __await.apply(void 0, [_a.sent()])];
-                    case 5: return [4 /*yield*/, _a.sent()];
+                        _b.sent();
+                        _b.label = 3;
+                    case 3:
+                        _b.trys.push([3, 9, 10, 11]);
+                        complete_1 = (e_1 = void 0, __values(complete)), complete_1_1 = complete_1.next();
+                        _b.label = 4;
+                    case 4:
+                        if (!!complete_1_1.done) return [3 /*break*/, 8];
+                        c = complete_1_1.value;
+                        complete.delete(c);
+                        return [4 /*yield*/, __await(c.r)];
+                    case 5: return [4 /*yield*/, _b.sent()];
                     case 6:
-                        _a.sent();
-                        return [3 /*break*/, 1];
-                    case 7: return [2 /*return*/];
+                        _b.sent();
+                        _b.label = 7;
+                    case 7:
+                        complete_1_1 = complete_1.next();
+                        return [3 /*break*/, 4];
+                    case 8: return [3 /*break*/, 11];
+                    case 9:
+                        e_1_1 = _b.sent();
+                        e_1 = { error: e_1_1 };
+                        return [3 /*break*/, 11];
+                    case 10:
+                        try {
+                            if (complete_1_1 && !complete_1_1.done && (_a = complete_1.return)) _a.call(complete_1);
+                        }
+                        finally { if (e_1) throw e_1.error; }
+                        return [7 /*endfinally*/];
+                    case 11: return [3 /*break*/, 1];
+                    case 12: return [2 /*return*/];
                 }
             });
         });
     }
     function push(item) {
-        if (resolver) {
-            resolver(null);
-        }
-        q.push(item);
+        aq.push(item);
     }
     return { push: push, results: results };
 }
